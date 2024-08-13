@@ -21,18 +21,37 @@
         text-align: center;
       }
 
+      #container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+
       canvas {
         display: block;
       }
 
       h1 {
+        position: absolute;
         margin-top: 20px;
+        z-index: 2;
+      }
+
+      #toggleShape {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+        z-index: 2;
       }
     </style>
   </head>
   <body>
     <div id="container"></div>
-    <h1></h1>
+    <h1>Feliz aniversáriooooo Eduardooooooo!</h1>
+    <button id="toggleShape">Toggle Shape</button>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
       // Setup the scene, camera, and renderer
@@ -49,59 +68,96 @@
 
       // Load the texture (image) for the spinning element
       const textureLoader = new THREE.TextureLoader();
-      const texture = textureLoader.load("./nobarqunho.png"); // Replace with the path to your friend's picture
+      const texture = textureLoader.load("./eddu.png");
 
-      // Create a box (or change to SphereGeometry for a sphere)
-      const geometry = new THREE.BoxGeometry(2, 2, 2); // Adjust size as needed
+      // Geometry shapes
+      const geometries = [
+        new THREE.BoxGeometry(2, 2, 2), // Cube
+        new THREE.SphereGeometry(1.5, 32, 32), // Sphere
+        new THREE.CylinderGeometry(1.5, 1.5, 2, 32), // Cylinder
+      ];
+      let currentGeometryIndex = 0;
+
+      // Material
       const material = new THREE.MeshBasicMaterial({ map: texture });
-      const cube = new THREE.Mesh(geometry, material);
-      scene.add(cube);
 
-      // Array to hold all objects in the scene
-      const objects = [cube];
+      // Array to hold all objects and their sounds
+      const objects = [];
 
       // Position the camera
       camera.position.z = 5;
 
-      // Handle mouse movement
-      let mouseX = 0;
-      let mouseY = 0;
-      let targetX = 0;
-      let targetY = 0;
+      // Audio Listener (used for all sounds)
+      const audioListener = new THREE.AudioListener();
+      camera.add(audioListener);
 
-      document.addEventListener("mousemove", (event) => {
-        mouseX = (event.clientX / window.innerWidth) * 2 - 1;
-        mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
-      });
-
-      // Handle mouse click to clone the object with a random position
-      document.addEventListener("click", () => {
-        const newCube = new THREE.Mesh(geometry, material);
+      // Function to create a new object with a unique sound
+      function createObject() {
+        const geometry = geometries[currentGeometryIndex];
+        const newObject = new THREE.Mesh(geometry, material);
 
         // Generate random positions for the new object
         const randomX = (Math.random() - 0.5) * 10;
         const randomY = (Math.random() - 0.5) * 10;
         const randomZ = (Math.random() - 0.5) * 10;
+        newObject.position.set(randomX, randomY, randomZ);
 
-        newCube.position.set(randomX, randomY, randomZ);
-        scene.add(newCube);
-        objects.push(newCube); // Add the new object to the array
+        // Load and play the spinning sound effect for this object
+        const spinSound = new THREE.PositionalAudio(audioListener);
+        const audioLoader = new THREE.AudioLoader();
+        audioLoader.load("./uroum.m4a", function (buffer) {
+          spinSound.setBuffer(buffer);
+          spinSound.setLoop(true);
+          spinSound.setVolume(1);
+          spinSound.play();
+        });
+
+        // Attach the sound to the object
+        newObject.add(spinSound);
+
+        // Add the new object and its sound to the scene and objects array
+        scene.add(newObject);
+        objects.push(newObject);
+      }
+
+      // Create the initial object
+      createObject();
+
+      // Handle mouse click to clone the object with a random position
+      document.addEventListener("click", () => {
+        createObject();
+
+        // Load and play the click sound
+        const clickSound = new THREE.Audio(audioListener);
+        const audioLoader = new THREE.AudioLoader();
+        audioLoader.load("./capim.m4a", function (buffer) {
+          clickSound.setBuffer(buffer);
+          clickSound.setLoop(false); // No loop for click sound
+          clickSound.setVolume(0.7); // Set volume (adjust as needed)
+          clickSound.play();
+        });
+      });
+
+      // Handle shape toggle button click
+      document.getElementById("toggleShape").addEventListener("click", () => {
+        currentGeometryIndex = (currentGeometryIndex + 1) % geometries.length;
+
+        // Remove all existing objects from the scene
+        objects.forEach((obj) => scene.remove(obj));
+        objects.length = 0;
+
+        // Create a new object with the selected shape
+        createObject();
       });
 
       // Animate the spinning and movement
       function animate() {
         requestAnimationFrame(animate);
 
-        // Update position and rotation of all objects
+        // Update rotation of all objects
         objects.forEach((obj) => {
           obj.rotation.x += 0.01;
           obj.rotation.y += 0.01;
-
-          // Only the original object follows the mouse
-          if (obj === cube) {
-            obj.position.x += (targetX - obj.position.x) * 0.1;
-            obj.position.y += (targetY - obj.position.y) * 0.1;
-          }
         });
 
         renderer.render(scene, camera);

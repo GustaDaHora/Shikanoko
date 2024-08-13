@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Happy Birthday!</title>
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        background: #1a1a1a;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        text-align: center;
+      }
+
+      canvas {
+        display: block;
+      }
+
+      h1 {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <h1></h1>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+      // Setup the scene, camera, and renderer
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      const renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.getElementById("container").appendChild(renderer.domElement);
+
+      // Load the texture (image) for the spinning element
+      const textureLoader = new THREE.TextureLoader();
+      const texture = textureLoader.load("./nobarqunho.png"); // Replace with the path to your friend's picture
+
+      // Create a box (or change to SphereGeometry for a sphere)
+      const geometry = new THREE.BoxGeometry(2, 2, 2); // Adjust size as needed
+      const material = new THREE.MeshBasicMaterial({ map: texture });
+      const cube = new THREE.Mesh(geometry, material);
+      scene.add(cube);
+
+      // Array to hold all objects in the scene
+      const objects = [cube];
+
+      // Position the camera
+      camera.position.z = 5;
+
+      // Handle mouse movement
+      let mouseX = 0;
+      let mouseY = 0;
+      let targetX = 0;
+      let targetY = 0;
+
+      document.addEventListener("mousemove", (event) => {
+        mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+        mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+      });
+
+      // Handle mouse click to clone the object with a random position
+      document.addEventListener("click", () => {
+        const newCube = new THREE.Mesh(geometry, material);
+
+        // Generate random positions for the new object
+        const randomX = (Math.random() - 0.5) * 10;
+        const randomY = (Math.random() - 0.5) * 10;
+        const randomZ = (Math.random() - 0.5) * 10;
+
+        newCube.position.set(randomX, randomY, randomZ);
+        scene.add(newCube);
+        objects.push(newCube); // Add the new object to the array
+      });
+
+      // Animate the spinning and movement
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // Update position and rotation of all objects
+        objects.forEach((obj) => {
+          obj.rotation.x += 0.01;
+          obj.rotation.y += 0.01;
+
+          // Only the original object follows the mouse
+          if (obj === cube) {
+            obj.position.x += (targetX - obj.position.x) * 0.1;
+            obj.position.y += (targetY - obj.position.y) * 0.1;
+          }
+        });
+
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // Handle window resize
+      window.addEventListener("resize", () => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      });
+    </script>
+  </body>
+</html>
